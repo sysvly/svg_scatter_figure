@@ -1,0 +1,222 @@
+<html>
+<meta charset = "utf-8">
+<head>
+    <title></title>
+    <link href="https://cdn.bootcss.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div>
+        <svg id="svgRoot" xmlns="http://www.w3.org/2000/svg" version="1.1" width="900" height="700">
+        </svg>
+    </div>
+
+    <div>
+        X轴数据
+        <select id="xSelect" onchange="redraw()">
+            <option value="sepalLength">sepalLength</option>
+            <option value="petalWidth">petalWidth</option>
+            <option value="sepalWidth" selected>sepalWidth</option>
+            <option value="petalLength">petalLength</option>
+        </select>
+    </div>
+    <div>
+        Y轴数据
+        <select id="ySelect" onchange="redraw()">
+            <option value="sepalLength" selected>sepalLength</option>
+            <option value="petalWidth">petalWidth</option>
+            <option value="sepalWidth">sepalWidth</option>
+            <option value="petalLength">petalLength</option>
+        </select>
+    </div>
+
+    <script src='http://cdn.bootcss.com/jquery/3.3.1/jquery.min.js'></script>
+    <script src='http://cdn.bootcss.com/bootstrap/4.1.1/js/bootstrap.min.js'></script>
+    <script src="flowers.js"> </script>
+    <script>
+
+        const X_ORIG = 50;
+        const Y_ORIG = 650;
+        const X_END = 850;
+        const Y_END = 50;
+        const Y_LENGTH = Y_END - Y_ORIG;
+        const X_LENGTH = X_END - X_ORIG;
+        const X_INTERVAL = 0.2; // X轴刻度间距
+        const Y_INTERVAL = 0.5; // Y轴刻度间距
+        const X_PREFIX_LENGTH = -16; // X轴刻度长度
+        const Y_PREFIX_LENGTH = 16; // Y轴刻度长度
+        const RADIUS = 6; // 圈圈的半径
+        const PAL_WIDTH = 32; // 调色板宽度
+        const PAL_HEIGHT = 32; // 调色板高度
+        const PAL_SPACING = 6; // 调色板间距
+        const NOTE_SPACING = 6; // 标注间距
+
+
+        /**
+         * 颜色表
+         */
+        const colors = {
+            "virginica": 'rgb(0,191,50)',
+            "setosa": 'rgb(73,98,214)',
+            "versicolor": 'rgb(255,142,0)'
+        };
+
+
+        redraw();
+
+        /**
+         * 绘制函数
+         */
+        function redraw() {
+            var xMinValue = Math.floor(min($("#xSelect").val(), db)); // $("#xSelect").val() is selected item in xSelect
+            var yMinValue = Math.floor(min($("#ySelect").val(), db));
+            var xMaxValue = Math.ceil(max($("#xSelect").val(), db));
+            var yMaxValue = Math.ceil(max($("#ySelect").val(), db));
+            var xSpace = X_LENGTH / ((xMaxValue - xMinValue) / X_INTERVAL);
+            var ySpace = Y_LENGTH / ((yMaxValue - yMinValue) / Y_INTERVAL);
+            console.log('X betweena: ' + xMinValue + '~' + xMaxValue);
+            console.log('Y betweena: ' + yMinValue + '~' + yMaxValue);
+            $("#svgRoot").empty();
+            //绘制纵横坐标
+            svgAdd('line', {
+                'x1': X_ORIG,
+                'y1': Y_ORIG,
+                'x2': X_ORIG,
+                'y2': Y_END,
+                'style': "stroke:rgb(99,99,99);stroke-width:2"
+            });
+            svgAdd('line', {
+                'x1': X_ORIG,
+                'y1': Y_ORIG,
+                'x2': X_END,
+                'y2': Y_ORIG,
+                'style': "stroke:rgb(99,99,99);stroke-width:2"
+            });
+
+            //绘制Y轴刻度
+            for (var ySpot = yMinValue; fle(ySpot, yMaxValue); ySpot += Y_INTERVAL) {
+                svgAdd('line', {
+                    'x1': X_ORIG,
+                    'y1': Y_ORIG + (ySpot - yMinValue) / Y_INTERVAL * ySpace,
+                    'x2': X_ORIG + X_PREFIX_LENGTH,
+                    'y2': Y_ORIG + (ySpot - yMinValue) / Y_INTERVAL * ySpace,
+                    'style': "stroke:rgb(99,99,99);stroke-width:2"
+                });
+                svgAdd('text', {
+                    'x': X_ORIG + X_PREFIX_LENGTH,
+                    'y': Y_ORIG + (ySpot - yMinValue) / Y_INTERVAL * ySpace,
+                    'text-anchor': 'end',
+                    'dominant-baseline': 'middle'
+                }).textContent = ySpot.toFixed(1);
+            }
+
+            //绘制X轴刻度
+            for (var xSpot = xMinValue; fle(xSpot, xMaxValue); xSpot += X_INTERVAL) {
+                console.log(xSpot);
+                svgAdd('line', {
+                    'x1': X_ORIG + (xSpot - xMinValue) / X_INTERVAL * xSpace,
+                    'y1': Y_ORIG,
+                    'x2': X_ORIG + (xSpot - xMinValue) / X_INTERVAL * xSpace,
+                    'y2': Y_ORIG + Y_PREFIX_LENGTH,
+                    'style': "stroke:rgb(99,99,99);stroke-width:2"
+                });
+                svgAdd('text', {
+                    'x': X_ORIG + (xSpot - xMinValue) / X_INTERVAL * xSpace,
+                    'y': Y_ORIG + Y_PREFIX_LENGTH,
+                    'text-anchor': 'middle',
+                    'dominant-baseline': 'hanging'
+                }).textContent = xSpot.toFixed(1);
+
+            }
+            //绘制X轴标注
+            svgAdd('text', {
+                    'x': X_END,
+                    'y': Y_ORIG - NOTE_SPACING,
+                    'text-anchor': 'end',
+                    'dominant-baseline': ' text-after-edge'
+                }).textContent = $("#xSelect").select().val() + "(cm)";
+
+            //绘制Y轴标注
+            svgAdd('text', {
+                    'x': 0,
+                    'y': 0 + NOTE_SPACING,
+                    'text-anchor': 'end',
+                    'dominant-baseline': ' hanging',
+                    'transform': 'translate(' + X_ORIG + ',' + Y_END + ')rotate(-90)'
+                }).textContent = $("#xSelect").select().val() + "(cm)";
+
+            //画圈圈
+            db.forEach(flower => {
+                svgAdd('circle', {
+                    'cx': X_ORIG + (flower[$("#xSelect").val()] - xMinValue) / X_INTERVAL * xSpace,
+                    'cy': Y_ORIG + (flower[$("#ySelect").val()] - yMinValue) / Y_INTERVAL * ySpace,
+                    'r': RADIUS,
+                    'style': "stroke:rgb(99,99,99);stroke-width:2;" + "fill: " + colors[flower['species']] + ";"
+                });
+            });
+            //画调色板
+            var palStartY = Y_END + PAL_HEIGHT;
+            $.each(colors, function (name, color) {
+                svgAdd('rect', {
+                    'x': X_END - PAL_WIDTH,
+                    'y': palStartY,
+                    'width': PAL_WIDTH,
+                    'height': PAL_HEIGHT,
+                    'style': "stroke:rgb(99,99,99);stroke-width:2;" + "fill: " + color + ";",
+                    'opacity': '0.8'
+                });
+                svgAdd('text', {
+                    'x': X_END - PAL_WIDTH - PAL_SPACING,
+                    'y': palStartY + PAL_HEIGHT / 2,
+                    'text-anchor': 'end',
+                    'dominant-baseline': 'middle',
+                    'opacity': '0.8'
+                }).textContent = name;
+                palStartY += PAL_HEIGHT + PAL_SPACING;
+            });
+
+
+        }
+
+        function fle(f1, f2) {
+            return (f2 - f1) >= 0.0001 || Math.abs(f1 - f2) <= 0.0001;
+        }
+     
+        function svgAdd(tag, attrs) {
+            var node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (var k in attrs) node.setAttribute(k, attrs[k]);
+            $("#svgRoot").append(node);
+            return node;
+        }
+
+        /**
+         * 根据字段求最小值。
+         * 例如 min('sepalLength', db) 找出db数组中sepalLength最小的那个数值
+         * field: 字段名称
+         * db: json 数组
+         */
+        function min(field, db) {
+            return Math.min.apply(Math, $.map(db, function (val, i) {
+                return val[field];
+            }));
+        }
+
+        /**
+         * 根据字段求最大值。
+         * 例如 min('sepalLength', db) 找出db数组中sepalLength最大的那个数值
+         * field: 字段名称
+         * db: json 数组
+         */
+        function max(field, db) {
+            return Math.max.apply(Math, $.map(db, function (val, i) {
+                return val[field];
+            }));
+        }
+
+
+
+
+    </script>
+</body>
+
+</html>
